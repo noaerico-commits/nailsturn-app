@@ -1,0 +1,635 @@
+<!doctype html>
+<html>
+<head>
+<meta charset=utf8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NailsTurn</title>
+
+<!-- Configuraciones PWA y especial para iPhone (iOS) -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#050B14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NailsTurn">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* --- SOLUCIÓN A LA PANTALLA NEGRA --- */
+[hidden] { display: none !important; }
+
+/* Paleta Global: Azul Oscuro Premium (estilo NailsTurn) */
+:root{
+  --bg: #050B14;
+  --surface: #0E1726;
+  --ink: #F8FAFC;
+  --mute: #8B9BB4;
+  --line: #1E293B;
+  --accent: #2563EB;
+  --accent-grad: linear-gradient(90deg, #38BDF8 0%, #2563EB 100%);
+  --accent-ink: #FFFFFF;
+  --accent-soft: #172554;
+  --stage: #020617;
+  
+  --ok: #34D399; --ok-bg: #064E3B;
+  --warn: #FBBF24; --warn-bg: #78350F;
+  --bad: #F87171; --bad-bg: #7F1D1D;
+  --idle: #8B9BB4; --idle-bg: #1E293B;
+  --wa: #22C55E;
+  
+  --f-display:'Bricolage Grotesque','DM Sans',system-ui,sans-serif;
+  --f-body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'DM Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;padding:0;background:var(--stage);color:var(--ink);font:15px/1.45 var(--f-body);
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer; font-family:var(--f-body)}
+:focus-visible{outline:2px solid #38BDF8;outline-offset:2px}
+
+.app{position:relative;height:100%;max-width:430px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:520px){
+  body{padding-block:20px}
+  .app{height:100%;max-height:880px;border:1px solid var(--line);border-radius:30px;box-shadow:0 20px 80px rgba(0,0,0,.6)}
+}
+
+main{flex:1;min-height:0;overflow-y:auto;padding:18px max(16px,env(safe-area-inset-left,0px)) 96px max(16px,env(safe-area-inset-right,0px))}
+main > * + *{margin-top:16px}
+h1{font:700 28px/1.1 var(--f-display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font:700 13px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0}
+.sub{color:var(--mute);margin:4px 0 0;text-transform:capitalize}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+
+.income{background:var(--accent-grad);color:var(--accent-ink);border-radius:22px;padding:18px 18px 16px;box-shadow:0 8px 20px rgba(37,99,235,.12)}
+.income small{font:500 12px var(--f-mono);opacity:.85;letter-spacing:.04em;text-transform:uppercase}
+.income b{display:block;font:700 38px/1.1 var(--f-display);letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.income span{font-size:13px;opacity:.9}
+
+.next{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 14px;display:flex;gap:14px;align-items:center}
+.next .bell{flex:none;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:#38BDF8;display:grid;place-items:center}
+.next p { margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.next .mute { color:var(--mute); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; margin-top:2px; }
+
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:11px 10px 11px 12px;cursor:pointer;text-align:left}
+.row .t{display:flex;flex-direction:column;font:500 13px/1.25 var(--f-mono);font-variant-numeric:tabular-nums}
+.row .t span{color:var(--mute);font-size:12px}
+.row .m{min-width:0;display:flex;flex-direction:column}
+.row .m strong{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .m span{color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.dim .m strong{text-decoration:line-through;color:var(--mute)}
+.chip{font:700 11px/1 var(--f-body);padding:5px 8px;border-radius:99px;white-space:nowrap}
+.c-Pendiente{background:var(--warn-bg);color:var(--warn)}
+.c-Completada{background:var(--ok-bg);color:var(--ok)}
+.c-Cancelada{background:var(--idle-bg);color:var(--idle)}
+.c-Noasistió{background:var(--bad-bg);color:var(--bad)}
+.wa{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--wa);border:1px solid var(--line);background:var(--bg);text-decoration:none}
+.empty{border:1px dashed var(--line);border-radius:16px;padding:22px 16px;text-align:center;color:var(--mute)}
+
+nav{flex:none;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;color:var(--mute);font:500 11px var(--f-body);border-radius:12px; transition:color .2s}
+nav button[aria-current="page"]{color:#38BDF8}
+nav svg{width:22px;height:22px}
+.fab{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(72px + env(safe-area-inset-bottom,0px));height:54px;padding:0 20px 0 16px;border-radius:27px;border:0;background:var(--accent-grad);color:var(--accent-ink);display:flex;align-items:center;gap:8px;font-weight:700;box-shadow:0 8px 24px rgba(37,99,235,.4);z-index:5}
+.fab svg{width:22px;height:22px}
+
+.sheet{position:absolute;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
+.sheet header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.sheet header h3{font:700 19px var(--f-display);margin:0;letter-spacing:-.01em}
+.x{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.sheet .body{flex:1;min-height:0;overflow-y:auto;padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.sheet footer{flex:none;padding:12px max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface);display:flex;gap:10px}
+
+label.f{display:flex;flex-direction:column;gap:6px;font:700 12px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);min-width:0}
+.in{width:100%;min-height:48px;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 13px;font-size:16px;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:400; transition:border .2s}
+.in:focus{border-color:#38BDF8; outline:none;}
+textarea.in{min-height:92px;resize:vertical}
+.in[readonly]{background:var(--idle-bg);color:var(--mute)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cc{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px}
+
+.btn{min-height:50px;border-radius:14px;border:1px solid var(--line);background:var(--surface);font-weight:700;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink);flex:1;cursor:pointer;}
+.btn.pri{background:var(--accent-grad);border:none;color:var(--accent-ink);box-shadow:0 4px 14px rgba(37,99,235,.2)}
+.btn.wa-b{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
+.btn svg{width:20px;height:20px}
+
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:6px}
+.seg button{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:12px;font-weight:500;font-size:14px;padding:0 6px}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);border-color:#38BDF8;color:#38BDF8;font-weight:700}
+.seg.st button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+.sw{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 14px;width:100%;text-align:left}
+.sw b{display:block;font-weight:700}.sw span.d{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.tg{flex:none;width:48px;height:28px;border-radius:99px;background:var(--line);position:relative;transition:background .15s}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.sw[aria-checked="true"] .tg{background:#38BDF8}
+.sw[aria-checked="true"] .tg::after{transform:translateX(20px)}
+
+.alert{border-radius:14px;padding:11px 13px;font-size:14px;display:flex;gap:10px}
+.alert.bad{background:var(--bad-bg);color:var(--bad)}
+.alert.ok{background:var(--ok-bg);color:var(--ok)}
+.alert.info{background:var(--idle-bg);color:var(--mute)}
+.kv{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 14px}
+.kv div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.kv div:last-child{border:0}
+.kv span{color:var(--mute)}.kv b{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.msg{font:400 13px/1.5 var(--f-mono);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--mute);overflow-wrap:anywhere}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;width:100%;text-align:left}
+.item .l{min-width:0;display:flex;flex-direction:column}
+.item .l strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l span{color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .r{font:500 13px var(--f-mono);color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+.day{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.day .nb{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.day .nb svg{width:20px;height:20px}
+.day .tt{text-align:center;flex:1}.day .tt b{display:block;font:700 18px var(--f-display);text-transform:capitalize}
+.day .tt button{background:none;border:0;color:#38BDF8;font-size:13px;font-weight:700;padding:2px 6px}
+.toast{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;z-index:40;white-space:nowrap}
+
+/* Estilos de Login (Exclusivo Iniciar Sesión) */
+.login-wrap {
+  background: radial-gradient(circle at top left, #172554 0%, var(--bg) 50%);
+  display: flex; flex-direction: column; justify-content: center; padding: 24px;
+}
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.input-group { position: relative; }
+.input-group svg {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--mute); width: 20px; height: 20px;
+}
+.input-group .in { padding-left: 44px; background: #080E1B; }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div class="app login-wrap" id="login-screen">
+  <div style="text-align:center;margin-bottom:32px;">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="url(#blue-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;">
+      <defs>
+        <linearGradient id="blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#38BDF8" />
+          <stop offset="100%" stop-color="#2563EB" />
+        </linearGradient>
+      </defs>
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="16" y1="2" x2="16" y2="6"></line>
+      <line x1="8" y1="2" x2="8" y2="6"></line>
+      <line x1="3" y1="10" x2="21" y2="10"></line>
+      <path d="M8 14l8 4v-4l-8-4v4z"></path>
+    </svg>
+    <h1 style="font-size:38px; font-weight:700;">Nails<span style="color:#2563EB">Turn</span></h1>
+    <p style="font-size:11px; letter-spacing:1.5px; color:var(--mute); text-transform:uppercase; margin-top:8px;">Acceso administrativo</p>
+  </div>
+  
+  <form id="login-form" class="login-box">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <label style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--mute); font-weight:700;">Correo electrónico</label>
+      <div class="input-group">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <input class="in" type="email" id="login-email" required placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <label style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--mute); font-weight:700;">Contraseña</label>
+      <div class="input-group">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <input class="in" type="password" id="login-pass" required placeholder="••••••••">
+      </div>
+    </div>
+    
+    <button class="btn pri" type="submit" id="login-btn" style="margin-top:8px;">
+      Iniciar sesión
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+    </button>
+
+    <div id="login-error" class="alert bad" hidden style="margin-top:4px;font-size:13px;"></div>
+  </form>
+</div>
+
+<!-- APLICACIÓN PRINCIPAL -->
+<div class="app" id="main-app" hidden>
+  <main id="view"></main>
+  <button class="fab" data-act="new-appt" aria-label="Nueva cita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nueva cita</button>
+  <nav id="nav" aria-label="Secciones"></nav>
+  <div class="sheet" id="sheet" hidden></div>
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+// TUS LLAVES REALES DE FIREBASE INTEGRADAS
+const firebaseConfig = {
+  apiKey: "AIzaSyCPZd7EClED9-XEABwSnLBS5H4GriZDgl4",
+  authDomain: "nailsturn-428db.firebaseapp.com",
+  projectId: "nailsturn-428db",
+  storageBucket: "nailsturn-428db.firebasestorage.app",
+  messagingSenderId: "66858592065",
+  appId: "1:66858592065:web:eb9fcb53ce050623d5e3c0",
+  measurementId: "G-Y0DYB0Q7F9"
+};
+
+let appFirebase, auth;
+try {
+  appFirebase = initializeApp(firebaseConfig);
+  auth = getAuth(appFirebase);
+} catch (e) {
+  console.warn("Error al inicializar Firebase:", e);
+}
+
+const loginScreen = document.getElementById('login-screen');
+const mainApp = document.getElementById('main-app');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const loginBtn = document.getElementById('login-btn');
+
+let currentUser = null;
+let S = null; 
+
+const defaultData = {
+  tab: 'home',
+  day: '',
+  q: '',
+  cfg: { lead: 30, block: true, cc: '595' },
+  clients: [],
+  services: [],
+  appts: []
+};
+
+function loadLocalData(uid) {
+  const localKey = 'nailsturn_data_' + uid;
+  const savedData = localStorage.getItem(localKey);
+  
+  if (savedData) {
+    S = JSON.parse(savedData);
+    S.day = ymd(new Date()); 
+    S.tab = 'home';
+  } else {
+    S = JSON.parse(JSON.stringify(defaultData));
+    S.day = ymd(new Date());
+    saveLocalData();
+  }
+}
+
+function saveLocalData() {
+  if (!currentUser || !S) return;
+  const localKey = 'nailsturn_data_' + currentUser.uid;
+  localStorage.setItem(localKey, JSON.stringify(S));
+}
+
+if (auth) {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      loadLocalData(user.uid); 
+      loginScreen.hidden = true;
+      mainApp.hidden = false;
+      render(); 
+    } else {
+      if (!currentUser || currentUser.uid !== 'admin_test') {
+        currentUser = null;
+        S = null;
+        loginScreen.hidden = false;
+        mainApp.hidden = true;
+      }
+    }
+  });
+}
+
+loginForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = 'Iniciando...';
+  loginError.hidden = true;
+
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+
+  // ATAJO PARA PRUEBAS RÁPIDAS
+  if (email.toLowerCase() === 'admin' && pass === 'admin') {
+    currentUser = { uid: 'admin_test' };
+    loadLocalData(currentUser.uid);
+    loginScreen.hidden = true;
+    mainApp.hidden = false;
+    render();
+    loginBtn.disabled = false;
+    loginForm.reset();
+    return;
+  }
+
+  if (!auth) {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = 'Iniciar sesión <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+      loginError.textContent = 'Error de conexión con Firebase. Revisa tu internet.';
+      loginError.hidden = false;
+      return;
+  }
+
+  // INICIAR SESIÓN CON FIREBASE
+  signInWithEmailAndPassword(auth, email, pass)
+    .then(() => {
+      loginBtn.disabled = false;
+      loginForm.reset();
+    })
+    .catch((error) => {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = 'Iniciar sesión <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+      loginError.textContent = 'Correo o contraseña incorrectos.';
+      loginError.hidden = false;
+    });
+});
+
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+const hm=d=>`${p2(d.getHours())}:${p2(d.getMinutes())}`;
+const gs=n=>'Gs. '+Math.round(n||0).toLocaleString('es-PY');
+const addDays=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return ymd(d)};
+const longDate=s=>new Date(s+'T12:00').toLocaleDateString('es-PY',{weekday:'long',day:'numeric',month:'long'});
+const dmy=s=>s.split('-').reverse().join('/');
+const startOf=a=>new Date(`${a.date}T${a.time}`);
+const endOf=a=>new Date(startOf(a).getTime()+a.dur*60000);
+const STATES=['Pendiente','Completada','Cancelada','No asistió'];
+const ACTIVE=['Pendiente','Completada'];
+const sc=s=>'c-'+s.replace(/\s/g,'');
+
+const nid = () => 'i' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+const I={
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>',
+ cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+ users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c1.9.8 3 2.6 3 5.6"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg>',
+ x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ l:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+ r:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+ bell:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></svg>',
+ wa:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4.1A8 8 0 1 1 8.2 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.3-2-1-.8.7c-.9-.4-1.6-1.1-2-2l.7-.8-1-2z"/></svg>'
+};
+
+const T=ymd(new Date());
+
+const cl=id=>S.clients.find(c=>c.id===id)||{name:'(sin cliente)',tel:'',cc:''};
+const sv=id=>S.services.find(s=>s.id===id)||{name:'(servicio)',price:0,dur:0};
+const dayAppts=d=>S.appts.filter(a=>a.date===d).sort((a,b)=>startOf(a)-startOf(b));
+
+function conflicts(c,ignoreId){
+  if(!c.date||!c.time||!c.dur) return [];
+  return S.appts.filter(o=>o.id!==ignoreId && ACTIVE.includes(o.status) && (c.block||o.block)
+    && startOf(c)<endOf(o) && endOf(c)>startOf(o));
+}
+const waNumber=c=>(c.cc||'').replace(/\D/g,'')+(c.tel||'').replace(/\D/g,'').replace(/^0+/,'');
+const waText=a=>`¡Hola ${cl(a.cid).name.split(' ')[0]}! Te recuerdo tu turno de ${sv(a.sid).name} para el ${dmy(a.date)} a las ${hm(startOf(a))}. ¿Me confirmas?`;
+const waLink=a=>`https://wa.me/${waNumber(cl(a.cid))}?text=${encodeURIComponent(waText(a))}`;
+const waClient=c=>`https://wa.me/${waNumber(c)}`;
+const fmtMin=m=>m>=60?`${Math.floor(m/60)} h ${m%60?m%60+' min':''}`.trim():`${m} min`;
+
+const row=a=>{const c=cl(a.cid),s=sv(a.sid);
+ return `<div class="row ${a.status==='Cancelada'?'dim':''}" role="button" tabindex="0" data-act="detail" data-id="${a.id}">
+  <div class="t"><b>${hm(startOf(a))}</b><span>${hm(endOf(a))}</span></div>
+  <div class="m"><strong>${esc(c.name)}</strong><span>${esc(s.name)} · ${gs(a.price)}</span></div>
+  <span class="chip ${sc(a.status)}">${a.status}</span>
+  <a class="wa" href="${waLink(a)}" target="_blank" rel="noopener" data-stop aria-label="WhatsApp a ${esc(c.name)}">${I.wa}</a></div>`};
+
+function viewHome(){
+  const list=dayAppts(T), done=list.filter(a=>a.status==='Completada');
+  const income=done.reduce((n,a)=>n+a.price,0), now=new Date();
+  const next=list.find(a=>a.status==='Pendiente'&&startOf(a)>now);
+  let nx='<p><b>No quedan citas pendientes hoy</b></p>';
+  if(next){const m=Math.round((startOf(next)-now)/60000), al=new Date(startOf(next)-S.cfg.lead*60000);
+    nx=`<p><b>Próxima: ${esc(cl(next.cid).name)} a las ${hm(startOf(next))}</b></p>
+        <span class="mute">En ${fmtMin(m)} · aviso a las ${hm(al)}</span>`}
+  
+  return `<div class="hdr"><div><h1>Hoy</h1><p class="sub">${longDate(T)}</p></div></div>
+   <section class="income"><small>Ingresos del día</small><b>${gs(income)}</b><span>${done.length} de ${list.length} citas completadas</span></section>
+   <div class="next" style="margin: 24px 0 30px;"><div class="bell">${I.bell}</div><div style="flex:1;min-width:0">${nx}</div></div>
+   <h2 style="margin-bottom:14px;">Agenda de hoy</h2>
+   <div class="list">${list.length?list.map(row).join(''):'<div class="empty">Sin citas hoy. Toca “Nueva cita” para agendar.</div>'}</div>`}
+
+function viewAgenda(){
+  const list=dayAppts(S.day), isT=S.day===T;
+  return `<div class="day"><button class="nb" data-act="day" data-n="-1" aria-label="Día anterior">${I.l}</button>
+    <div class="tt"><b>${longDate(S.day)}</b>${isT?'':'<button data-act="today">Ir a hoy</button>'}</div>
+    <button class="nb" data-act="day" data-n="1" aria-label="Día siguiente">${I.r}</button></div>
+   <div class="list">${list.length?list.map(row).join(''):'<div class="empty">Día libre. Toca “Nueva cita” para agendar.</div>'}</div>`}
+
+const clientRows=()=>{const q=S.q.trim().toLowerCase();
+  const l=S.clients.filter(c=>!q||c.name.toLowerCase().includes(q)||c.tel.includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  return l.length?l.map(c=>`<button class="item" data-act="client" data-id="${c.id}"><span class="l"><strong>${esc(c.name)}</strong><span>+${esc(c.cc)} ${esc(c.tel)}</span></span><span class="r">${S.appts.filter(a=>a.cid===c.id).length} citas</span></button>`).join(''):'<div class="empty">Ningún cliente coincide.</div>'};
+function viewClients(){
+  return `<div class="hdr"><h1>Clientes</h1><button class="btn pri" style="flex:none;min-height:44px;font-size:14px" data-act="client">Nuevo</button></div>
+   <input class="in" id="q" type="search" placeholder="Buscar por nombre o teléfono" value="${esc(S.q)}">
+   <div class="list" id="clist">${clientRows()}</div>`}
+
+function viewSettings(){
+  const leads=[15,30,60];
+  return `<h1>Ajustes</h1>
+   <section style="display:flex;flex-direction:column;gap:10px"><h2>Notificaciones</h2>
+    <p style="margin:0;color:var(--mute)">¿Con cuánta antelación quieres el aviso de tu próxima cita?</p>
+    <div class="seg" role="group" aria-label="Antelación del aviso">${leads.map(m=>`<button data-act="lead" data-v="${m}" aria-pressed="${S.cfg.lead===m}">${m===60?'1 hora':m+' min'}</button>`).join('')}</div></section>
+   <section style="display:flex;flex-direction:column;gap:10px"><h2>Agendamiento</h2>
+    <button class="sw" role="switch" aria-checked="${!S.cfg.block}" data-act="block"><span><b>Permite citas encimadas</b><span class="d">${S.cfg.block?'Apagado: las nuevas citas bloquean su horario y no se pueden pisar.':'Encendido: puedes agendar dos citas a la misma hora.'}</span></span><span class="tg"></span></button></section>
+   <section style="display:flex;flex-direction:column;gap:10px"><div class="hdr"><h2>Servicios</h2><button class="btn" style="flex:none;min-height:38px;padding:0 14px" data-act="service">Agregar</button></div>
+    ${S.services.length?S.services.map(s=>`<button class="item" data-act="service" data-id="${s.id}"><span class="l"><strong>${esc(s.name)}</strong><span>${s.dur} min</span></span><span class="r">${gs(s.price)}</span></button>`).join(''):'<div class="empty" style="padding:12px; font-size:13px">No has agregado servicios.</div>'}</section>
+   <section style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+    <button class="btn" style="color:var(--bad);border-color:var(--line)" data-act="logout">Cerrar sesión</button>
+   </section>`}
+
+const TABS=[['home','Inicio',I.home],['agenda','Agenda',I.cal],['clients','Clientes',I.users],['settings','Ajustes',I.gear]];
+function render(){
+  $('#view').innerHTML={home:viewHome,agenda:viewAgenda,clients:viewClients,settings:viewSettings}[S.tab]();
+  $('#nav').innerHTML=TABS.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}>${i}${l}</button>`).join('');
+}
+
+const sheet=$('#sheet');
+function openSheet(title,body,footer){
+  sheet.innerHTML=`<header><h3>${title}</h3><button class="x" data-act="close" aria-label="Cerrar">${I.x}</button></header><div class="body">${body}</div><footer>${footer}</footer>`;
+  sheet.hidden=false; sheet.querySelector('.body').scrollTop=0;
+}
+const closeSheet=()=>{sheet.hidden=true;sheet.innerHTML='';F=null;render()};
+let tt; function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200)}
+
+let F=null;
+function openApptForm(id){
+  const a=id&&S.appts.find(x=>x.id===id);
+  F=a?{...a}:{id:null,cid:'',sid:'',date:S.tab==='agenda'?S.day:T,time:'',price:0,dur:0,status:'Pendiente',block:S.cfg.block};
+  const opts=(arr,sel,ph)=>`<option value="">${ph}</option>`+arr.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.name)}</option>`).join('');
+  openSheet(a?'Editar cita':'Nueva cita',`
+   <label class="f">Cliente<select class="in" id="f-cid">${opts(S.clients,F.cid,'Elegir cliente')}</select></label>
+   <label class="f">Servicio<select class="in" id="f-sid">${S.services.map(s=>`<option value="${s.id}" ${s.id===F.sid?'selected':''}>${esc(s.name)} ·${s.dur} min</option>`).join('').replace(/^/,`<option value="">Elegir servicio</option>`)}</select></label>
+   <div class="two"><label class="f">Fecha<input class="in" id="f-date" type="date" value="${F.date}"></label>
+   <label class="f">Hora de inicio<input class="in" id="f-time" type="time" step="300" value="${F.time}"></label></div>
+   <div class="two"><label class="f">Costo (Gs.)<input class="in" id="f-price" type="number" inputmode="numeric" min="0" step="1000" value="${F.price||''}"></label>
+   <label class="f">Hora de fin<input class="in" id="f-end" readonly value="—"></label></div>
+   <div id="f-alert"></div>
+   <button class="sw" role="switch" id="f-block" aria-checked="${F.block}"><span><b>Bloquea el horario</b><span class="d">Nadie más puede agendarse en este lapso.</span></span><span class="tg"></span></button>
+   <div style="display:flex;flex-direction:column;gap:6px"><h2>Estado</h2><div class="seg st" id="f-status">${STATES.map(s=>`<button type="button" data-act="fstate" data-v="${s}" aria-pressed="${F.status===s}">${s}</button>`).join('')}</div></div>`,
+   `<button class="btn" data-act="close">Cancelar</button><button class="btn pri" id="f-save" data-act="save-appt" disabled>Guardar cita</button>`);
+  refreshForm();
+}
+function refreshForm(){
+  if(!F) return;
+  const ok=F.cid&&F.sid&&F.date&&F.time&&F.dur>0;
+  $('#f-end').value=ok?hm(endOf(F)):'—';
+  const box=$('#f-alert'), cf=ok?conflicts(F,F.id):[];
+  let h='';
+  if(ok&&cf.length){const o=cf[0];
+    h=`<div class="alert ${F.block||o.block?'bad':'info'}"><span><b>Horario ocupado.</b> Ya tienes a ${esc(cl(o.cid).name)} de ${hm(startOf(o))} a ${hm(endOf(o))}.${F.block?' Cambia la hora o apaga “Bloquea el horario”.':''}</span></div>`}
+  else if(ok){h=`<div class="alert ok"><span>Horario libre: ${hm(startOf(F))} a ${hm(endOf(F))} (${fmtMin(F.dur)}).</span></div>`}
+  box.innerHTML=h;
+  const blocked=cf.length>0; 
+  $('#f-save').disabled=!ok||blocked;
+}
+
+function openAppt(id){
+  const a=S.appts.find(x=>x.id===id), c=cl(a.cid), s=sv(a.sid);
+  openSheet(esc(c.name),`
+   <div class="seg st" role="group" aria-label="Estado">${STATES.map(x=>`<button data-act="status" data-id="${a.id}" data-v="${x}" aria-pressed="${a.status===x}">${x}</button>`).join('')}</div>
+   <div class="kv"><div><span>Servicio</span><b>${esc(s.name)}</b></div><div><span>Fecha</span><b>${longDate(a.date)}</b></div>
+    <div><span>Horario</span><b>${hm(startOf(a))} a ${hm(endOf(a))}</b></div><div><span>Costo</span><b>${gs(a.price)}</b></div>
+    <div><span>Horario</span><b>${a.block?'Bloqueado':'Permite encimar'}</b></div></div>
+   ${c.notes?`<div><h2 style="margin-bottom:8px">Notas del cliente</h2><div class="msg" style="font-family:var(--f-body);font-size:14px">${esc(c.notes)}</div></div>`:''}
+   <div><h2 style="margin-bottom:8px">Mensaje de WhatsApp</h2><div class="msg">${esc(waText(a))}</div></div>`,
+   `<button class="btn" data-act="edit-appt" data-id="${a.id}">Editar</button><a class="btn wa-b" href="${waLink(a)}" target="_blank" rel="noopener">${I.wa}WhatsApp</a>`);
+}
+
+function openClient(id){
+  const c=id?S.clients.find(x=>x.id===id):{id:null,name:'',cc:S.cfg.cc,tel:'',notes:''};
+  const hist=id?S.appts.filter(a=>a.cid===id).sort((a,b)=>startOf(b)-startOf(a)):[];
+  openSheet(id?'Cliente':'Nuevo cliente',`
+   <label class="f">Nombre<input class="in" id="c-name" value="${esc(c.name)}" autocomplete="off"></label>
+   <div class="cc"><label class="f">País<input class="in" id="c-cc" inputmode="numeric" value="${esc(c.cc)}"></label>
+   <label class="f">Teléfono<input class="in" id="c-tel" type="tel" value="${esc(c.tel)}"></label></div>
+   <div class="msg" id="c-wa">WhatsApp: ${waNumber(c)?'+'+waNumber(c):'—'}</div>
+   <label class="f">Notas del cliente<textarea class="in" id="c-notes" placeholder="Preferencias, historial…">${esc(c.notes)}</textarea></label>
+   ${hist.length?`<div><h2 style="margin-bottom:8px">Historial</h2><div class="list">${hist.map(a=>`<div class="item"><span class="l"><strong>${esc(sv(a.sid).name)}</strong><span>${dmy(a.date)} · ${hm(startOf(a))}</span></span><span class="chip ${sc(a.status)}">${a.status}</span></div>`).join('')}</div></div>`:''}`,
+   `<button class="btn" data-act="close">Cancelar</button>${id?`<a class="btn wa-b" href="${waClient(c)}" target="_blank" rel="noopener">${I.wa}Abrir chat</a>`:''}<button class="btn pri" data-act="save-client" data-id="${id||''}">Guardar</button>`);
+}
+
+function openService(id){
+  const s=id?S.services.find(x=>x.id===id):{name:'',price:'',dur:''};
+  openSheet(id?'Servicio':'Nuevo servicio',`
+   <label class="f">Nombre del servicio<input class="in" id="s-name" value="${esc(s.name)}" autocomplete="off"></label>
+   <div class="two"><label class="f">Costo (Gs.)<input class="in" id="s-price" type="number" inputmode="numeric" min="0" step="1000" value="${s.price}"></label>
+   <label class="f">Duración (min)<input class="in" id="s-dur" type="number" inputmode="numeric" min="5" step="5" value="${s.dur}"></label></div>`,
+   `<button class="btn" data-act="close">Cancelar</button><button class="btn pri" data-act="save-service" data-id="${id||''}">Guardar</button>`);
+}
+
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-stop]')) return;
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const act=el.dataset.act, id=el.dataset.id, v=el.dataset.v;
+  
+  if(act==='logout'){
+    if (currentUser && currentUser.uid === 'admin_test') {
+      window.location.reload();
+    } else if (auth) {
+      signOut(auth).then(() => {
+        window.location.reload();
+      }).catch((error) => {
+        console.error("Error al cerrar sesión:", error);
+      });
+    }
+  }
+  else if(act==='tab'){S.tab=v; saveLocalData(); render(); $('#view').scrollTop=0}
+  else if(act==='new-appt') openApptForm();
+  else if(act==='detail') openAppt(id);
+  else if(act==='edit-appt') openApptForm(id);
+  else if(act==='close') closeSheet();
+  else if(act==='client') openClient(id);
+  else if(act==='service') openService(id);
+  else if(act==='day'){S.day=addDays(S.day,+el.dataset.n); saveLocalData(); render()}
+  else if(act==='today'){S.day=T; saveLocalData(); render()}
+  else if(act==='lead'){S.cfg.lead=+v; saveLocalData(); render(); toast('Te avisaremos '+(S.cfg.lead===60?'1 hora':S.cfg.lead+' min')+' antes')}
+  else if(act==='block'){S.cfg.block=!S.cfg.block; saveLocalData(); render()}
+  else if(act==='status'){
+    const a=S.appts.find(x=>x.id===id); 
+    a.status=v; 
+    saveLocalData(); 
+    openAppt(id); 
+    toast('Estado: '+v);
+  }
+  else if(act==='fstate'){F.status=v;[...$('#f-status').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v))}
+  else if(act==='save-appt'){
+    if(el.disabled||!F) return;
+    if(F.id){Object.assign(S.appts.find(x=>x.id===F.id),F)} else {F.id=nid();S.appts.push({...F})}
+    S.day=F.date; 
+    saveLocalData(); 
+    closeSheet(); 
+    toast('Cita guardada');
+  }
+  else if(act==='save-client'){
+    const name=$('#c-name').value.trim(), tel=$('#c-tel').value.trim();
+    if(!name||!tel){toast('Falta el nombre o el teléfono');return}
+    const d={name,cc:$('#c-cc').value.trim(),tel,notes:$('#c-notes').value.trim()};
+    if(id) Object.assign(S.clients.find(x=>x.id===id),d); else S.clients.push({id:nid(),...d});
+    saveLocalData(); 
+    closeSheet(); 
+    toast('Cliente guardado');
+  }
+  else if(act==='save-service'){
+    const name=$('#s-name').value.trim(), price=+$('#s-price').value, dur=+$('#s-dur').value;
+    if(!name||!dur){toast('Falta el nombre o la duración');return}
+    if(id) Object.assign(S.services.find(x=>x.id===id),{name,price,dur}); else S.services.push({id:nid(),name,price,dur});
+    saveLocalData(); 
+    closeSheet(); 
+    toast('Servicio guardado');
+  }
+});
+
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('.row[role=button]')){e.preventDefault();e.target.click()}
+  if(e.key==='Escape'&&!sheet.hidden) closeSheet();
+});
+
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='q'){S.q=t.value;$('#clist').innerHTML=clientRows();return}
+  if(t.id&&t.id.startsWith('c-')&&['c-cc','c-tel'].includes(t.id)){
+    $('#c-wa').textContent='WhatsApp: '+(waNumber({cc:$('#c-cc').value,tel:$('#c-tel').value})?'+'+waNumber({cc:$('#c-cc').value,tel:$('#c-tel').value}):'—');return}
+  if(!F||!t.id||!t.id.startsWith('f-')) return;
+  if(t.id==='f-cid') F.cid=t.value;
+  if(t.id==='f-sid'){F.sid=t.value;const s=S.services.find(x=>x.id===t.value);F.price=s?s.price:0;F.dur=s?s.dur:0;$('#f-price').value=F.price||''} 
+  if(t.id==='f-date') F.date=t.value;
+  if(t.id==='f-time') F.time=t.value;
+  if(t.id==='f-price') F.price=+t.value||0;
+  refreshForm();
+});
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#f-block'); if(!b||!F) return;
+  F.block=!F.block; b.setAttribute('aria-checked',F.block); refreshForm();
+});
+</script>
+
+<!-- REGISTRO DEL SERVICE WORKER (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(registration => {
+        console.log('ServiceWorker registrado con éxito');
+      }).catch(err => {
+        console.log('Error al registrar ServiceWorker: ', err);
+      });
+    });
+  }
+</script>
+
+</body></html>
